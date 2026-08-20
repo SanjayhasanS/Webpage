@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kite — Zerodha Clone</title>
+<style>
+  :root{
+    --bg:#f4f5f9;
+    --panel:#ffffff;
+    --border:#e6e8f0;
+    --text:#3d3d3d;
+    --text-soft:#6b6f80;
+    --text-faint:#9599a8;
+    --blue:#387ed1;
+    --blue-dark:#2a63a8;
+    --red:#eb5b3c;
+    --green:#28a745;
+    --loss:#eb5b3c;
+    --buy:#387ed1;
+    --sell:#eb5b3c;
+    --gold:#f2a93b;
+    --purple:#7266d8;
+    --radius:4px;
+    font-size:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+  }
+  a{text-decoration:none;color:inherit;}
+  button{font-family:inherit;cursor:pointer;}
+
+  /* ---------- Ticker bar ---------- */
+  .ticker{
+    display:flex;
+    align-items:center;
+    gap:28px;
+    padding:6px 20px;
+    background:#fff;
+    border-bottom:1px solid var(--border);
+    font-size:12.5px;
+    color:var(--text-soft);
+  }
+  .ticker .idx{display:flex;align-items:center;gap:8px;}
+  .ticker .idx b{color:var(--text);font-weight:600;}
+  .up{color:var(--green);}
+  .down{color:var(--red);}
+
+  /* ---------- Navbar ---------- */
+  .navbar{
+    display:flex;
+    align-items:center;
+    padding:0 20px;
+    height:52px;
+    background:#fff;
+    border-bottom:1px solid var(--border);
+    gap:26px;
+  }
+  .brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:17px;color:var(--red);}
+  .brand svg{display:block;}
+  .navtabs{display:flex;gap:22px;flex:1;height:100%;}
+  .navtab{
+    display:flex;align-items:center;
+    height:100%;
+    font-size:13.5px;
+    color:var(--text-soft);
+    border-bottom:2px solid transparent;
+    padding:0 2px;
+    font-weight:500;
+  }
+  .navtab.active{color:var(--red);border-bottom-color:var(--red);font-weight:600;}
+  .navtab:hover{color:var(--red);cursor:pointer;}
+  .navicons{display:flex;align-items:center;gap:18px;color:var(--text-soft);}
+  .navicons .icon-btn{position:relative;display:flex;align-items:center;}
+  .cart-count{
+    position:absolute;top:-6px;right:-8px;background:var(--red);color:#fff;
+    font-size:9px;border-radius:50%;width:14px;height:14px;display:flex;
+    align-items:center;justify-content:center;font-weight:700;
+  }
+  .profile-pill{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-soft);}
+  .avatar{width:24px;height:24px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;}
+
+  /* ---------- Layout ---------- */
+  .layout{display:flex;align-items:flex-start;max-width:1400px;margin:0 auto;}
+  .watchlist{
+    width:300px;min-width:260px;
+    background:#fff;
+    border-right:1px solid var(--border);
+    min-height:calc(100vh - 90px);
+    padding:10px 0;
+  }
+  .search-box{
+    margin:0 14px 10px;
+    display:flex;align-items:center;gap:8px;
+    border:1px solid var(--border);border-radius:var(--radius);
+    padding:6px 10px;color:var(--text-faint);
+  }
+  .search-box input{border:none;outline:none;font-size:13px;width:100%;color:var(--text);background:transparent;}
+  .wl-meta{display:flex;justify-content:space-between;align-items:center;padding:2px 14px 8px;font-size:12px;color:var(--text-faint);}
+  .wl-meta .addgrp{color:var(--blue);font-weight:600;cursor:pointer;}
+  .wl-group-label{
+    padding:8px 14px 4px;font-size:11.5px;color:var(--text-faint);font-weight:700;letter-spacing:.3px;text-transform:uppercase;
+  }
+  .wl-row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:6px 14px;cursor:pointer;position:relative;
+  }
+  .wl-row:hover{background:#f7f8fc;}
+  .wl-row.selected{background:#eef4fc;}
+  .wl-sym{font-size:13px;font-weight:600;color:var(--text);}
+  .wl-right{text-align:right;font-size:12.5px;}
+  .wl-right .chg{font-size:11px;}
+
+  .main{flex:1;min-width:0;padding:22px 26px;}
+  .greet{font-size:19px;font-weight:600;margin:0 0 20px;color:var(--text);}
+
+  .stat-row{display:flex;gap:60px;margin-bottom:26px;flex-wrap:wrap;}
+  .stat{min-width:220px;}
+  .stat h3{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--text-soft);margin:0 0 10px;font-weight:600;}
+  .stat .big{font-size:24px;font-weight:600;color:var(--text);margin-bottom:8px;}
+  .stat .sub{display:flex;justify-content:space-between;font-size:12px;color:var(--text-faint);max-width:230px;margin-bottom:4px;}
+  .stat .sub span:first-child{}
+  .stat .viewstmt{font-size:12px;color:var(--blue);cursor:pointer;font-weight:600;}
+
+  .card{background:#fff;border:1px solid var(--border);border-radius:6px;padding:18px 20px;margin-bottom:18px;}
+  .card h4{margin:0 0 14px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;}
+  .holdings-top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:14px;}
+  .holdings-pl{font-size:20px;font-weight:600;color:var(--green);}
+  .holdings-pl small{display:block;font-size:11px;font-weight:400;color:var(--text-faint);}
+  .holdings-vals{display:flex;gap:30px;font-size:12px;color:var(--text-faint);text-align:right;}
+  .holdings-vals b{display:block;color:var(--text);font-size:13px;font-weight:600;}
+  .bar{display:flex;height:14px;border-radius:3px;overflow:hidden;margin-bottom:6px;}
+  .bar div{height:100%;}
+
+  .two-col{display:flex;gap:18px;}
+  .two-col .card{flex:1;}
+  .chart-wrap{position:relative;}
+  .empty-positions{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    height:230px;color:var(--text-faint);gap:10px;
+  }
+  .empty-positions svg{opacity:.35;}
+  .get-started{
+    background:var(--blue);color:#fff;border:none;padding:8px 22px;border-radius:4px;
+    font-size:13px;font-weight:600;
+  }
+  .get-started:hover{background:var(--blue-dark);}
+
+  /* holdings table */
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:right;color:var(--text-faint);font-weight:600;font-size:11.5px;padding:8px 10px;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.3px;}
+  th:first-child,td:first-child{text-align:left;}
+  td{padding:9px 10px;border-bottom:1px solid #f0f1f6;text-align:right;}
+
+  /* order panel */
+  .order-panel{
+    position:fixed;top:70px;left:320px;width:300px;background:#fff;
+    border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,.14);
+    padding:16px;z-index:50;
+  }
+  .order-panel .sym{font-weight:700;font-size:15px;margin-bottom:2px;}
+  .order-panel .ltp{font-size:12px;color:var(--text-faint);margin-bottom:12px;}
+  .order-panel .close-x{position:absolute;top:12px;right:14px;cursor:pointer;color:var(--text-faint);font-size:16px;}
+  .buysell{display:flex;gap:8px;margin-bottom:12px;}
+  .buysell button{flex:1;border:none;color:#fff;padding:8px 0;border-radius:4px;font-weight:700;font-size:13px;}
+  .btn-buy{background:var(--buy);}
+  .btn-sell{background:var(--sell);}
+  .order-form label{font-size:11px;color:var(--text-faint);display:block;margin-bottom:3px;}
+  .order-form .row2{display:flex;gap:10px;margin-bottom:10px;}
+  .order-form input{width:100%;border:1px solid var(--border);border-radius:4px;padding:6px 8px;font-size:13px;}
+  .order-form .place-btn{width:100%;border:none;padding:9px 0;border-radius:4px;font-weight:700;color:#fff;font-size:13px;margin-top:4px;}
+  .place-buy{background:var(--buy);}
+  .place-sell{background:var(--sell);}
+  .order-form .place-btn:hover{opacity:.9;}
+
+  .toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    background:#2b2b2b;color:#fff;padding:10px 20px;border-radius:6px;font-size:13px;
+    z-index:200;opacity:0;pointer-events:none;transition:opacity .25s, transform .25s;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px);}
+
+  .funds-grid{display:flex;gap:18px;}
+  .funds-grid .card{flex:1;}
+  .funds-form input{width:100%;border:1px solid var(--border);border-radius:4px;padding:8px 10px;font-size:14px;margin:8px 0 14px;}
+  .funds-form button{background:var(--blue);color:#fff;border:none;padding:9px 24px;border-radius:4px;font-weight:600;font-size:13px;}
+  .funds-form button:hover{background:var(--blue-dark);}
+
+  .empty-generic{padding:60px 0;text-align:center;color:var(--text-faint);font-size:13.5px;}
+
+  ::selection{background:#cfe1f7;}
+</style>
+</head>
+<body>
+
+<div class="ticker">
+  <div class="idx"><span>NIFTY 50</span> <b id="niftyVal">24678.50</b> <span class="up" id="niftyChg">98.50 (0.40%)</span></div>
+  <div class="idx"><span>SENSEX</span> <b id="sensexVal">80435.09</b> <span class="up" id="sensexChg">277.21 (0.35%)</span></div>
+</div>
+
+<div class="navbar">
+  <div class="brand">
+    <svg width="20" height="20" viewBox="0 0 24 24"><path d="M2 22 L14 2 L22 2 L10 22 Z" fill="#eb5b3c"/></svg>
+    Kite
+  </div>
+  <div class="navtabs">
+    <div class="navtab active" data-tab="dashboard">Dashboard</div>
+    <div class="navtab" data-tab="orders">Orders <span id="orderTabCount" style="font-size:10px;color:var(--text-faint);"></span></div>
+    <div class="navtab" data-tab="holdings">Holdings</div>
+    <div class="navtab" data-tab="positions">Positions</div>
+    <div class="navtab" data-tab="bids">Bids</div>
+    <div class="navtab" data-tab="funds">Funds</div>
+  </div>
+  <div class="navicons">
+    <div class="icon-btn">🛒<span class="cart-count" id="cartCount">0</span></div>
+    <div class="icon-btn">🔔</div>
+    <div class="profile-pill"><div class="avatar">U</div> Zerodha</div>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- Watchlist -->
+  <div class="watchlist">
+    <div class="search-box">🔍 <input id="wlSearch" placeholder="Search eg: infy bse, nifty fut, index fund..."></div>
+    <div class="wl-meta"><span>MAN (<span id="wlCount">7</span>/250)</span><span class="addgrp">+ New group</span></div>
+
+    <div class="wl-group-label">Defence Theme</div>
+    <div class="wl-group-label" style="display:none;"></div>
+
+    <div class="wl-group-label" style="text-transform:none;font-weight:600;color:var(--text-soft);">Banking</div>
+    <div id="wlList"></div>
+  </div>
+
+  <!-- Main content -->
+  <div class="main">
+
+    <!-- DASHBOARD TAB -->
+    <div id="tab-dashboard">
+      <div class="greet">Hi, User</div>
+
+      <div class="stat-row">
+        <div class="stat">
+          <h3>💠 Equity</h3>
+          <div class="big" id="equityAvail">₹1.42L</div>
+          <div class="sub"><span>Margins used</span><span id="equityUsed">29.95L</span></div>
+          <div class="sub"><span>Opening balance</span><span>-267.9</span></div>
+          <div class="viewstmt">↗ View statement</div>
+        </div>
+        <div class="stat">
+          <h3>🪙 Commodity</h3>
+          <div class="big" id="commodityAvail">25.35k</div>
+          <div class="sub"><span>Margins used</span><span>0</span></div>
+          <div class="sub"><span>Opening balance</span><span>0</span></div>
+          <div class="viewstmt">↗ View statement</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="holdings-top">
+          <div>
+            <h4 style="margin-bottom:2px;">📊 Holdings (<span id="holdCount">16</span>)</h4>
+          </div>
+          <div class="holdings-vals">
+            <div><b id="holdPL">18.64k</b>P&amp;L <span class="up" style="font-size:11px;">▲16.85%</span></div>
+            <div><b id="holdCurVal">29.95L</b>Current value</div>
+            <div><b id="holdInv">1.23L</b>Investment</div>
+          </div>
+        </div>
+        <div class="bar" id="holdBar"></div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <h4>📈 Market overview <span style="font-weight:400;color:var(--text-faint);font-size:12px;">NIFTY50</span></h4>
+          <svg id="marketChart" viewBox="0 0 480 130" width="100%" height="130"></svg>
+        </div>
+        <div class="card">
+          <h4>Positions</h4>
+          <div class="empty-positions" id="positionsEmptyBlock">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M12 2v6M8 8h8l2 12H6L8 8z"/></svg>
+            <div>You don't have any positions yet</div>
+            <button class="get-started" onclick="switchTab('positions')">Get started</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ORDERS TAB -->
+    <div id="tab-orders" style="display:none;">
+      <div class="greet">Orders</div>
+      <div class="card">
+        <table id="ordersTable">
+          <thead><tr><th>Time</th><th>Type</th><th>Instrument</th><th>Qty</th><th>Price</th><th>Status</th></tr></thead>
+          <tbody id="ordersBody"></tbody>
+        </table>
+        <div class="empty-generic" id="ordersEmpty">No orders placed yet today — buy or sell something from the watchlist to see it here.</div>
+      </div>
+    </div>
+
+    <!-- HOLDINGS TAB -->
+    <div id="tab-holdings" style="display:none;">
+      <div class="greet">Holdings (<span id="holdCount2">16</span>)</div>
+      <div class="card">
+        <table>
+          <thead><tr><th>Instrument</th><th>Qty</th><th>Avg. cost</th><th>LTP</th><th>Cur. val</th><th>P&amp;L</th><th>Net chg.</th></tr></thead>
+          <tbody id="holdingsBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- POSITIONS TAB -->
+    <div id="tab-positions" style="display:none;">
+      <div class="greet">Positions</div>
+      <div class="card">
+        <table>
+          <thead><tr><th>Product</th><th>Instrument</th><th>Qty</th><th>Avg.</th><th>LTP</th><th>P&amp;L</th></tr></thead>
+          <tbody id="positionsBody"></tbody>
+        </table>
+        <div class="empty-generic" id="positionsEmpty">You don't have any open positions yet. Place a buy or sell order from the watchlist to open one.</div>
+      </div>
+    </div>
+
+    <!-- BIDS TAB -->
+    <div id="tab-bids" style="display:none;">
+      <div class="greet">Bids</div>
+      <div class="card">
+        <div class="empty-generic">No IPO or SGB bids placed yet.</div>
+      </div>
+    </div>
+
+    <!-- FUNDS TAB -->
+    <div id="tab-funds" style="display:none;">
+      <div class="greet">Funds</div>
+      <div class="funds-grid">
+        <div class="card">
+          <h4>Equity</h4>
+          <div class="sub" style="max-width:100%;font-size:13px;margin-bottom:6px;"><span>Available margin</span><b id="fundsEquityAvail">₹1,42,000</b></div>
+          <div class="sub" style="max-width:100%;font-size:13px;margin-bottom:16px;"><span>Used margin</span><span>₹29,95,000</span></div>
+          <div class="funds-form">
+            <label style="font-size:11px;color:var(--text-faint);">Amount to add (₹)</label>
+            <input type="number" id="addFundsAmt" placeholder="e.g. 10000">
+            <button onclick="addFunds()">Add funds</button>
+          </div>
+        </div>
+        <div class="card">
+          <h4>Commodity</h4>
+          <div class="sub" style="max-width:100%;font-size:13px;margin-bottom:6px;"><span>Available margin</span><b>₹25,350</b></div>
+          <div class="sub" style="max-width:100%;font-size:13px;">Commodity segment not enabled for fund transfer in this demo.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Order panel (buy/sell) -->
+<div class="order-panel" id="orderPanel" style="display:none;">
+  <span class="close-x" onclick="closeOrderPanel()">✕</span>
+  <div class="sym" id="opSym">RELIANCE</div>
+  <div class="ltp" id="opLtp">NSE  1,376.85  -14.00 (-1.00%)</div>
+  <div class="buysell">
+    <button class="btn-buy" onclick="selectSide('BUY')">BUY</button>
+    <button class="btn-sell" onclick="selectSide('SELL')">SELL</button>
+  </div>
+  <div class="order-form">
+    <div class="row2">
+      <div><label>Qty</label><input type="number" id="opQty" value="1" min="1"></div>
+      <div><label>Price</label><input type="number" id="opPrice" step="0.05"></div>
+    </div>
+    <button class="place-btn" id="opPlaceBtn" onclick="placeOrder()">Place BUY order</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------------- Mock data ---------------- */
+const stocks = [
+  {sym:'YESBANK', exch:'NSE', ltp:20.33, chg:0.78, chgPct:3.99},
+  {sym:'HDFCBANK', exch:'NSE', ltp:950.45, chg:5.95, chgPct:0.63},
+  {sym:'BANDHANBANK', exch:'NSE', ltp:238.36, chg:1.69, chgPct:0.71},
+  {sym:'ICICIBANK', exch:'NSE', ltp:1108.07, chg:1.91, chgPct:1.80},
+  {sym:'AXISBANK', exch:'NSE', ltp:812.40, chg:8.50, chgPct:1.06},
+  {sym:'SBIN', exch:'NSE', ltp:1057.90, chg:15.40, chgPct:0.79},
+  {sym:'RELIANCE', exch:'NSE', ltp:1376.85, chg:-14.00, chgPct:-1.00},
+];
+
+let cartCount = 0;
+let currentSym = null;
+let currentSide = 'BUY';
+let orders = [];
+let equityAvailable = 142000;
+
+/* ---------------- Render watchlist ---------------- */
+const wlList = document.getElementById('wlList');
+function renderWatchlist(filter=''){
+  wlList.innerHTML = '';
+  const f = filter.trim().toUpperCase();
+  const filtered = stocks.filter(s => s.sym.includes(f));
+  document.getElementById('wlCount').textContent = filtered.length;
+  filtered.forEach(s=>{
+    const up = s.chg >= 0;
+    const row = document.createElement('div');
+    row.className = 'wl-row' + (currentSym===s.sym ? ' selected' : '');
+    row.innerHTML = `
+      <div class="wl-sym">${s.sym}</div>
+      <div class="wl-right">
+        <div style="color:${up?'var(--green)':'var(--red)'}">${s.ltp.toFixed(2)}</div>
+        <div class="chg" style="color:${up?'var(--green)':'var(--red)'}">${up?'+':''}${s.chgPct.toFixed(2)}%</div>
+      </div>`;
+    row.onclick = ()=> openOrderPanel(s.sym);
+    wlList.appendChild(row);
+  });
+}
+renderWatchlist();
+document.getElementById('wlSearch').addEventListener('input', e=>renderWatchlist(e.target.value));
+
+/* ---------------- Order panel ---------------- */
+function openOrderPanel(sym){
+  currentSym = sym;
+  const s = stocks.find(x=>x.sym===sym);
+  document.getElementById('opSym').textContent = s.sym;
+  document.getElementById('opLtp').textContent = `${s.exch}  ${s.ltp.toFixed(2)}  ${s.chg>=0?'+':''}${s.chg.toFixed(2)} (${s.chgPct.toFixed(2)}%)`;
+  document.getElementById('opPrice').value = s.ltp.toFixed(2);
+  document.getElementById('opQty').value = 1;
+  selectSide('BUY');
+  document.getElementById('orderPanel').style.display = 'block';
+  renderWatchlist(document.getElementById('wlSearch').value);
+}
+function closeOrderPanel(){
+  document.getElementById('orderPanel').style.display = 'none';
+  currentSym = null;
+  renderWatchlist(document.getElementById('wlSearch').value);
+}
+function selectSide(side){
+  currentSide = side;
+  const btn = document.getElementById('opPlaceBtn');
+  btn.textContent = `Place ${side} order`;
+  btn.className = 'place-btn ' + (side==='BUY' ? 'place-buy' : 'place-sell');
+}
+function placeOrder(){
+  if(!currentSym) return;
+  const qty = parseInt(document.getElementById('opQty').value) || 1;
+  const price = parseFloat(document.getElementById('opPrice').value) || 0;
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  orders.unshift({time:timeStr, side:currentSide, sym:currentSym, qty, price, status:'COMPLETE'});
+  cartCount++;
+  document.getElementById('cartCount').textContent = cartCount;
+  document.getElementById('orderTabCount').textContent = `(${orders.length})`;
+
+  if(currentSide === 'BUY'){
+    equityAvailable -= qty*price;
+  } else {
+    equityAvailable += qty*price;
+  }
+  updateEquityDisplay();
+  renderOrders();
+  renderPositions();
+  showToast(`${currentSide} order for ${qty} × ${currentSym} @ ₹${price.toFixed(2)} placed`);
+  closeOrderPanel();
+}
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+/* ---------------- Orders tab ---------------- */
+function renderOrders(){
+  const body = document.getElementById('ordersBody');
+  const empty = document.getElementById('ordersEmpty');
+  body.innerHTML = '';
+  if(orders.length===0){ empty.style.display='block'; return; }
+  empty.style.display='none';
+  orders.forEach(o=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td style="text-align:left;">${o.time}</td>
+      <td style="text-align:left;color:${o.side==='BUY'?'var(--buy)':'var(--sell)'};font-weight:600;">${o.side}</td>
+      <td style="text-align:left;">${o.sym}</td>
+      <td>${o.qty}</td><td>₹${o.price.toFixed(2)}</td>
+      <td style="color:var(--green);">${o.status}</td>`;
+    body.appendChild(tr);
+  });
+}
+
+/* ---------------- Positions tab (derived from today's orders) ---------------- */
+function renderPositions(){
+  const body = document.getElementById('positionsBody');
+  const empty = document.getElementById('positionsEmpty');
+  const emptyBlockDash = document.getElementById('positionsEmptyBlock');
+  body.innerHTML = '';
+  const net = {};
+  orders.forEach(o=>{
+    if(!net[o.sym]) net[o.sym] = {qty:0, cost:0};
+    const dir = o.side==='BUY' ? 1 : -1;
+    net[o.sym].qty += dir*o.qty;
+    net[o.sym].cost += dir*o.qty*o.price;
+  });
+  const active = Object.entries(net).filter(([,v])=>v.qty!==0);
+  if(active.length===0){
+    empty.style.display='block';
+    emptyBlockDash.style.display='flex';
+    return;
+  }
+  empty.style.display='none';
+  emptyBlockDash.style.display='none';
+  active.forEach(([sym,v])=>{
+    const s = stocks.find(x=>x.sym===sym);
+    const avg = Math.abs(v.cost/v.qty);
+    const pl = (s.ltp - avg) * v.qty;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td style="text-align:left;">MIS</td>
+      <td style="text-align:left;">${sym}</td>
+      <td>${v.qty}</td><td>₹${avg.toFixed(2)}</td><td>₹${s.ltp.toFixed(2)}</td>
+      <td style="color:${pl>=0?'var(--green)':'var(--red)'};font-weight:600;">${pl>=0?'+':''}₹${pl.toFixed(2)}</td>`;
+    body.appendChild(tr);
+  });
+}
+
+/* ---------------- Equity display ---------------- */
+function fmtINR(n){
+  if(Math.abs(n) >= 100000) return (n/100000).toFixed(2)+'L';
+  if(Math.abs(n) >= 1000) return (n/1000).toFixed(2)+'k';
+  return n.toFixed(0);
+}
+function updateEquityDisplay(){
+  document.getElementById('equityAvail').textContent = '₹'+fmtINR(equityAvailable);
+  document.getElementById('fundsEquityAvail').textContent = '₹'+equityAvailable.toLocaleString('en-IN');
+}
+updateEquityDisplay();
+
+/* ---------------- Funds ---------------- */
+function addFunds(){
+  const amt = parseFloat(document.getElementById('addFundsAmt').value);
+  if(!amt || amt<=0){ showToast('Enter a valid amount'); return; }
+  equityAvailable += amt;
+  updateEquityDisplay();
+  document.getElementById('addFundsAmt').value = '';
+  showToast(`₹${amt.toLocaleString('en-IN')} added to your Equity balance`);
+}
+
+/* ---------------- Holdings table + bar ---------------- */
+const holdings = [
+  {sym:'HDFCBANK', qty:20, avg:1420, ltp:1512.60},
+  {sym:'ICICIBANK', qty:35, avg:980, ltp:1108.07},
+  {sym:'RELIANCE', qty:10, avg:1450, ltp:1376.85},
+  {sym:'TCS', qty:12, avg:3400, ltp:3610.20},
+  {sym:'INFY', qty:25, avg:1390, ltp:1512.40},
+  {sym:'SBIN', qty:60, avg:720, ltp:1057.90},
+];
+function renderHoldings(){
+  const body = document.getElementById('holdingsBody');
+  body.innerHTML = '';
+  let totalPL=0, totalCur=0, totalInv=0;
+  holdings.forEach(h=>{
+    const cur = h.qty*h.ltp, inv = h.qty*h.avg, pl = cur-inv, chgPct = (pl/inv*100);
+    totalPL+=pl; totalCur+=cur; totalInv+=inv;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td style="text-align:left;">${h.sym}</td><td>${h.qty}</td>
+      <td>₹${h.avg.toFixed(2)}</td><td>₹${h.ltp.toFixed(2)}</td><td>₹${cur.toLocaleString('en-IN')}</td>
+      <td style="color:${pl>=0?'var(--green)':'var(--red)'};font-weight:600;">${pl>=0?'+':''}₹${pl.toFixed(0)}</td>
+      <td style="color:${chgPct>=0?'var(--green)':'var(--red)'};">${chgPct>=0?'+':''}${chgPct.toFixed(2)}%</td>`;
+    body.appendChild(tr);
+  });
+  document.getElementById('holdCount').textContent = holdings.length;
+  document.getElementById('holdCount2').textContent = holdings.length;
+  document.getElementById('holdPL').textContent = fmtINR(totalPL);
+  document.getElementById('holdCurVal').textContent = fmtINR(totalCur);
+  document.getElementById('holdInv').textContent = fmtINR(totalInv);
+
+  // segmented bar sized by current value share, colored by gain/loss
+  const bar = document.getElementById('holdBar');
+  bar.innerHTML = '';
+  const palette = ['#387ed1','#4caf50','#7266d8','#20c1c1','#f2a93b','#eb5b3c'];
+  holdings.forEach((h,i)=>{
+    const cur = h.qty*h.ltp;
+    const seg = document.createElement('div');
+    seg.style.width = (cur/totalCur*100)+'%';
+    seg.style.background = palette[i%palette.length];
+    bar.appendChild(seg);
+  });
+}
+renderHoldings();
+
+/* ---------------- Market chart (simple SVG line) ---------------- */
+function renderMarketChart(){
+  const points = [];
+  let v = 60;
+  for(let i=0;i<40;i++){
+    v += (Math.random()-0.45)*6;
+    points.push(v);
+  }
+  const min = Math.min(...points), max = Math.max(...points);
+  const w=480, h=110, pad=10;
+  const norm = points.map((p,i)=>{
+    const x = pad + (i/(points.length-1))*(w-2*pad);
+    const y = h - pad - ((p-min)/(max-min))*(h-2*pad);
+    return [x,y];
+  });
+  const path = norm.map((p,i)=> (i===0?'M':'L')+p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+  const areaPath = path + ` L${norm[norm.length-1][0]},${h-pad} L${norm[0][0]},${h-pad} Z`;
+  const svg = document.getElementById('marketChart');
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="chartFade" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#387ed1" stop-opacity="0.18"/>
+        <stop offset="100%" stop-color="#387ed1" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <path d="${areaPath}" fill="url(#chartFade)" stroke="none"/>
+    <path d="${path}" fill="none" stroke="#387ed1" stroke-width="1.6"/>
+  `;
+}
+renderMarketChart();
+
+/* ---------------- Tab switching ---------------- */
+function switchTab(tab){
+  document.querySelectorAll('[id^="tab-"]').forEach(el=> el.style.display='none');
+  document.getElementById('tab-'+tab).style.display='block';
+  document.querySelectorAll('.navtab').forEach(el=>{
+    el.classList.toggle('active', el.dataset.tab === tab);
+  });
+  if(tab==='orders') renderOrders();
+  if(tab==='positions') renderPositions();
+}
+document.querySelectorAll('.navtab').forEach(el=>{
+  el.addEventListener('click', ()=> switchTab(el.dataset.tab));
+});
+
+renderOrders();
+renderPositions();
+</script>
+</body>
+</html>
